@@ -76,7 +76,8 @@ select:focus { outline: none; border-color: var(--accent); }
 
 /* Wine cards */
 .wine-list { display: flex; flex-direction: column; gap: 7px; }
-.wine-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; display: flex; gap: 16px; align-items: flex-start; transition: border-color .15s; }
+.wine-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 0; transition: border-color .15s; }
+.wine-row { display: flex; gap: 16px; align-items: flex-start; }
 .wine-card:hover { border-color: var(--border-h); }
 
 .wine-img { flex-shrink: 0; width: 44px; display: flex; align-items: flex-start; justify-content: center; padding-top: 2px; }
@@ -102,7 +103,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .info-btn { font-size: 12px; padding: 5px 11px; border-radius: var(--rs); border: 1px solid var(--border); background: var(--bg); color: var(--muted); cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; transition: all .15s; }
 .info-btn:hover { background: var(--accent-l); color: var(--accent-t); border-color: #e8c4cc; }
 .info-btn.loading { opacity: .6; cursor: not-allowed; }
-.info-panel { margin-top: 10px; padding: 12px 14px; background: var(--accent-l); border-radius: var(--rs); border: 1px solid #e8c4cc; font-size: 13px; color: var(--text); line-height: 1.65; }
+.info-panel { margin-top: 10px; padding: 12px 14px; background: var(--accent-l); border-radius: var(--rs); border: 1px solid #e8c4cc; font-size: 13px; color: var(--text); line-height: 1.65; width: 100%; }
 .info-panel .info-score { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
 .info-panel .info-source { font-size: 11px; color: var(--accent-t); margin-top: 8px; opacity: .7; }
 
@@ -629,29 +630,31 @@ function renderWines() {
     const typeIcon = type.includes('Mouss')?'🥂':type.includes('Rosé')?'🌸':type.includes('Vitt')?'🍾':type.includes('Dessert')?'🍯':'🍷';
 
     return `<div class="wine-card">
-      <div class="wine-img">
-        ${imgUrl
-          ? `<img src="${imgUrl}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'no-img\\'>${typeIcon}</span>'">`
-          : `<span class="no-img">${typeIcon}</span>`}
-      </div>
-      <div class="wine-body">
-        <div class="wine-name">${w.productNameBold||''}${w.productNameThin?` <span class="wine-thin">${w.productNameThin}</span>`:''}</div>
-        ${w.producerName?`<div class="wine-producer">${w.producerName}</div>`:''}
-        <div class="wine-meta">${meta}</div>
-        ${grapes?`<div class="wine-meta">🍇 ${grapes}</div>`:''}
-        ${w.taste?`<div class="wine-taste">${w.taste}</div>`:''}
-        <div class="wine-tags">
-          ${type?`<span class="tag tag-type">${type}</span>`:''}
-          ${w.country?`<span class="tag tag-country">${w.country}</span>`:''}
-          ${w.isOrganic?`<span class="tag tag-eco">🌿 Ekologisk</span>`:''}
+      <div class="wine-row">
+        <div class="wine-img">
+          ${imgUrl
+            ? `<img src="${imgUrl}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'no-img\\'>${typeIcon}</span>'">`
+            : `<span class="no-img">${typeIcon}</span>`}
         </div>
-        <div id="info-panel-${w.productId}" class="info-panel" style="display:none;"></div>
+        <div class="wine-body">
+          <div class="wine-name">${w.productNameBold||''}${w.productNameThin?` <span class="wine-thin">${w.productNameThin}</span>`:''}</div>
+          ${w.producerName?`<div class="wine-producer">${w.producerName}</div>`:''}
+          <div class="wine-meta">${meta}</div>
+          ${grapes?`<div class="wine-meta">🍇 ${grapes}</div>`:''}
+          ${w.taste?`<div class="wine-taste">${w.taste}</div>`:''}
+          <div class="wine-tags">
+            ${type?`<span class="tag tag-type">${type}</span>`:''}
+            ${w.country?`<span class="tag tag-country">${w.country}</span>`:''}
+            ${w.isOrganic?`<span class="tag tag-eco">🌿 Ekologisk</span>`:''}
+          </div>
+        </div>
+        <div class="wine-right">
+          <div class="price">${price}</div>
+          <button class="info-btn" id="info-btn-${w.productId}" onclick="fetchInfo('${w.productId}')">✦ Info</button>
+          <a class="syst-btn" href="${systUrl(w)}" target="_blank">🛒 Bolaget</a>
+        </div>
       </div>
-      <div class="wine-right">
-        <div class="price">${price}</div>
-        <button class="info-btn" id="info-btn-${w.productId}" onclick="fetchInfo('${w.productId}')">✦ Info</button>
-        <a class="syst-btn" href="${systUrl(w)}" target="_blank">🛒 Bolaget</a>
-      </div>
+      <div id="info-panel-${w.productId}" class="info-panel" style="display:none;"></div>
     </div>`;
   }).join('');
 
