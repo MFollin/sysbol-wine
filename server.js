@@ -40,6 +40,7 @@ app.get('/api/systembolaget', async (req, res) => {
     // Steg 2: Kolla lagerstatus per produkt och butik i batchar om 10
     const BATCH = 10;
     const inStock = [];
+    let debugLogged = false;
     for (let i = 0; i < allProducts.length; i += BATCH) {
       const batch = allProducts.slice(i, i + BATCH);
       const results = await Promise.all(batch.map(async (product) => {
@@ -48,8 +49,12 @@ app.get('/api/systembolaget', async (req, res) => {
           const r = await fetch(url, { headers: SYS_HEADERS });
           if (!r.ok) return null;
           const data = await r.json();
-          // Finns i lager om quantity > 0
-          const qty = data.quantity ?? data.stock ?? data.availableQuantity ?? data.qty;
+          // Log first response for debugging
+          if (!debugLogged) {
+            console.log('STOCKBALANCE SAMPLE:', JSON.stringify(data));
+            debugLogged = true;
+          }
+          const qty = data.quantity ?? data.stock ?? data.availableQuantity ?? data.qty ?? data.stockBalance ?? data.balance;
           if (qty > 0) return product;
           return null;
         } catch (e) {
