@@ -491,8 +491,6 @@ async function startFetch() {
     const r = await fetch(`/api/systembolaget?storeId=${selectedStoreId}`);
     if (!r.ok) throw new Error(`Serverfel: ${r.status}`);
     const data = await r.json();
-    if (!r.ok) throw new Error(`Serverfel: ${r.status}`);
-    const data = await r.json();
     if (data.error) throw new Error(data.error);
 
     setProgress(90, `Kollade lager för ${data.totalFetched || '?'} viner — ${data.totalInStock || 0} finns i butiken...`);
