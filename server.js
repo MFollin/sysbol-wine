@@ -49,12 +49,12 @@ app.get('/api/systembolaget', async (req, res) => {
           const r = await fetch(url, { headers: SYS_HEADERS });
           if (!r.ok) return null;
           const data = await r.json();
-          // Log first response for debugging
           if (!debugLogged) {
             console.log('STOCKBALANCE SAMPLE:', JSON.stringify(data));
             debugLogged = true;
           }
-          const qty = data.quantity ?? data.stock ?? data.availableQuantity ?? data.qty ?? data.stockBalance ?? data.balance;
+          const item = Array.isArray(data) ? data[0] : data;
+          const qty = item ? item.stock : 0;
           if (qty > 0) return product;
           return null;
         } catch (e) {
