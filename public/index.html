@@ -53,6 +53,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .fetch-btn:disabled { opacity: .45; cursor: not-allowed; }
 .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: rot .7s linear infinite; }
 @keyframes rot { to { transform: rotate(360deg); } }
+@keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
 
 /* Stats */
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1rem; }
@@ -64,7 +65,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .progress-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 2rem 1.5rem; text-align: center; }
 .progress-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
 .progress-card p { font-size: 13px; color: var(--muted); margin-bottom: 1.25rem; }
-.pbar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+.pbar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 8px; position: relative; }
 .pfill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .4s ease; }
 .ptext { font-size: 12px; color: var(--hint); }
 
@@ -262,13 +263,16 @@ function storeKeydown(e) {
 }
 
 // ── Hämta sortiment ────────────────────────────────────────────
-function setProgress(pct, msg) {
+function setProgress(pct, msg, indeterminate = false) {
+  const fillStyle = indeterminate
+    ? 'width:40%;animation:slide 1.2s ease-in-out infinite'
+    : `width:${pct}%`;
   document.getElementById('content').innerHTML = `
     <div class="progress-card">
       <h3>Alice letar...</h3>
       <p>${msg}</p>
-      <div class="pbar"><div class="pfill" style="width:${pct}%"></div></div>
-      <div class="ptext">${pct}%</div>
+      <div class="pbar"><div class="pfill" style="${fillStyle}"></div></div>
+      <div class="ptext">${indeterminate ? 'Kollar lagerstatus i butiken...' : pct+'%'}</div>
     </div>`;
 }
 
@@ -281,17 +285,18 @@ async function startFetch() {
   wines = [];
 
   try {
-    setProgress(20, 'Hämtar tillfälliga sortimentet...');
+    setProgress(10, 'Hämtar sortiment och kollar lager i butiken — tar 15–20 sekunder...', true);
     const r = await fetch(`/api/systembolaget?storeId=${selectedStoreId}`);
+    if (!r.ok) throw new Error(`Serverfel: ${r.status}`);
+    const data = await r.json();
     if (!r.ok) throw new Error(`Serverfel: ${r.status}`);
     const data = await r.json();
     if (data.error) throw new Error(data.error);
 
-    setProgress(70, 'Sorterar hyllan...');
+    setProgress(90, `Kollade lager för ${data.totalFetched || '?'} viner — ${data.totalInStock || 0} finns i butiken...`);
     let fetched = data.products || [];
-    if (!fetched.length) throw new Error('Inga viner hittades för den butiken.');
-    const temp = fetched.filter(w => (w.assortmentText||'').toLowerCase().includes('tillfäll'));
-    wines = (temp.length > 0 ? temp : fetched).filter(w => w.productNameBold || w.productNameThin);
+    if (!fetched.length) throw new Error('Inga viner i lager på den butiken just nu.');
+    wines = fetched.filter(w => w.productNameBold || w.productNameThin);
 
     setProgress(100, 'Klart!');
     updateStats();
