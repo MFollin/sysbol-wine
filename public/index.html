@@ -333,16 +333,17 @@ async function fetchInfo(productId) {
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{
           role: 'user',
-          content: `Search for information about this wine: "${wineName}" by ${producer}, ${country}${grapes ? ', druvor: '+grapes : ''}.
+          content: `Search for information about this wine: "${wineName}" by ${producer}, ${country}${grapes ? ', grapes: '+grapes : ''}.
 
-Find: Vivino rating (if exists), any critic scores, and a brief tasting description.
+Search broadly — wine critics, importer notes, wine blogs, any source. Do not focus on any specific rating site.
 
-Reply in Swedish with max 4 sentences. Format:
-- Start with rating if found, e.g. "Vivino: 3.8/5 (2 400 betyg)"
-- Then 2-3 sentences describing taste and character
-- End with one sentence about food pairing or best occasion
+Reply in Swedish with 3-5 sentences. Include:
+- What kind of wine this is and its character
+- Taste and aroma
+- Food pairing or when to drink it
+- A score or rating only if you naturally come across one — don't search specifically for it
 
-Keep it concise and useful for someone standing in a wine shop.`
+Tone: knowledgeable but casual, like a sommelier friend. No bullet points, just flowing text.`
         }]
       })
     });
