@@ -70,6 +70,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .lbtn:hover { background: var(--surface); color: var(--text); }
 .lbtn-vivino { background: var(--accent-l); color: var(--accent-t); border-color: #e8c4cc; }
 .lbtn-syst { background: var(--blue-l); color: var(--blue); border-color: #ccddf0; }
+.wine-taste { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; font-style: italic; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .msg { text-align: center; padding: 4rem 2rem; color: var(--muted); }
 .msg .mi { font-size: 42px; margin-bottom: .75rem; }
 .msg h3 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
@@ -195,10 +196,11 @@ function systUrl(w) {
   const name = [w.productNameBold, w.productNameThin]
     .filter(Boolean).join('-')
     .toLowerCase()
-    .replace(/[åä]/g,'a').replace(/ö/g,'o')
-    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/[^a-z0-9åäöéèêàüï]+/g,'-')
     .replace(/^-+|-+$/g,'');
-  const id = (w.productId||'').toString().replace(/\D/g,'');
+  // productNumber is the short article number used in Systembolaget URLs
+  // productId is a longer internal ID — not used in URLs
+  const id = (w.productNumber || w.productId || '').toString().replace(/\D/g,'');
   return `https://www.systembolaget.se/produkt/vin/${name}-${id}/`;
 }
 
@@ -245,23 +247,28 @@ function renderWines() {
   const cards = list.map((w, idx) => {
     const type = getType(w);
     const price = w.price ? parseFloat(w.price).toFixed(0)+' kr' : '';
-    const vol = w.volume ? (parseFloat(w.volume)/100).toFixed(0)+' cl' : '';
+    const vol = w.volume ? w.volume+' ml' : '';
     const alc = w.alcoholPercentage ? parseFloat(w.alcoholPercentage).toFixed(1)+'%' : '';
-    const meta = [w.country, w.categoryLevel2, w.vintage, vol, alc].filter(Boolean).join(' · ');
-    const icon = type.includes('Mouss')?'🥂':type.includes('Rosé')?'🌸':type.includes('Vitt')?'🍾':type.includes('Dessert')?'🍯':'🍷';
+    const origin = [w.originLevel1, w.originLevel2].filter(Boolean).join(', ');
+    const meta = [w.country, origin, w.vintage, vol, alc].filter(Boolean).join(' · ');
+    const grapes = (w.grapes||[]).join(', ');
+    const imgUrl = w.productId ? `https://product-cdn.systembolaget.se/productimages/${w.productId}/${w.productId}_400.png` : '';
 
     return `<div class="wine-card">
       <div class="rank-col">
         <div class="rank-num">${idx+1}</div>
-        <div class="wine-icon">${icon}</div>
+        ${imgUrl ? `<img src="${imgUrl}" alt="" style="width:32px;object-fit:contain;border-radius:3px;" onerror="this.style.display='none'">` : ''}
       </div>
       <div class="wine-body">
         <div class="wine-name">${w.productNameBold||''}${w.productNameThin?` <span class="wine-thin">${w.productNameThin}</span>`:''}</div>
         ${w.producerName?`<div class="wine-producer">${w.producerName}</div>`:''}
         <div class="wine-meta">${meta}</div>
+        ${grapes?`<div class="wine-meta">🍇 ${grapes}</div>`:''}
+        ${w.taste?`<div class="wine-taste">${w.taste}</div>`:''}
         <div class="wine-tags">
           ${type?`<span class="tag tag-type">${type}</span>`:''}
           ${w.country?`<span class="tag tag-country">${w.country}</span>`:''}
+          ${w.isOrganic?`<span class="tag" style="background:#e8f5ee;color:#1a6b3a;border-color:#b8dfc8;">🌿 Ekologisk</span>`:''}
         </div>
       </div>
       <div class="wine-right">
