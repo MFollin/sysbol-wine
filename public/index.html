@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tillfälliga viner</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f5f2;
+  --surface: #ffffff;
+  --border: #e4dfd8;
+  --border-h: #c8c0b4;
+  --text: #1a1614;
+  --muted: #6b6560;
+  --hint: #a09890;
+  --accent: #8b1a2f;
+  --accent-l: #f5e8eb;
+  --accent-t: #6b1224;
+  --blue: #1a4f8a;
+  --blue-l: #e8f0fa;
+  --green: #1a6b3a;
+  --r: 10px;
+  --rs: 6px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.5; }
+.app { max-width: 860px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
+
+h1 { font-size: 20px; font-weight: 600; letter-spacing: -.3px; margin-bottom: 3px; }
+h1 em { color: var(--accent); font-style: normal; }
+.subtitle { font-size: 13px; color: var(--muted); margin-bottom: 1.25rem; }
+
+.controls { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+.store-box { display: flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--rs); padding: 0 12px; height: 40px; }
+.store-box label { font-size: 12px; color: var(--muted); }
+.store-box input { width: 60px; border: none; background: none; font-size: 14px; font-weight: 600; color: var(--text); font-family: monospace; }
+.store-box input:focus { outline: none; }
+.store-badge { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.ctrl-search { flex: 1; min-width: 150px; position: relative; }
+.ctrl-search input { width: 100%; height: 40px; padding: 0 12px 0 34px; border: 1px solid var(--border); border-radius: var(--rs); font-size: 14px; background: var(--surface); color: var(--text); }
+.ctrl-search input:focus { outline: none; border-color: var(--accent); }
+.ctrl-search .si { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; opacity: .45; }
+select { height: 40px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--rs); font-size: 13px; background: var(--surface); color: var(--text); }
+select:focus { outline: none; border-color: var(--accent); }
+
+.fetch-btn { height: 40px; padding: 0 18px; background: var(--accent); color: #fff; border: none; border-radius: var(--rs); font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.fetch-btn:hover { opacity: .88; }
+.fetch-btn:disabled { opacity: .45; cursor: not-allowed; }
+.spin { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: rot .7s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1rem; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--rs); padding: 10px 12px; }
+.stat .sl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.stat .sv { font-size: 20px; font-weight: 600; margin-top: 2px; }
+
+.progress-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 2rem 1.5rem; text-align: center; }
+.progress-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.progress-card p { font-size: 13px; color: var(--muted); margin-bottom: 1.25rem; }
+.pbar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+.pfill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .4s ease; }
+.ptext { font-size: 12px; color: var(--hint); }
+.phase-list { display: flex; flex-direction: column; gap: 6px; margin-top: 1.25rem; text-align: left; max-width: 340px; margin-left: auto; margin-right: auto; }
+.phase { font-size: 13px; color: var(--hint); display: flex; align-items: center; gap: 8px; }
+.phase.done { color: var(--green); }
+.phase.active { color: var(--text); font-weight: 500; }
+
+.list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .6rem; }
+.lh-count { font-size: 13px; color: var(--muted); }
+.lh-note { font-size: 12px; color: var(--hint); }
+
+.wine-list { display: flex; flex-direction: column; gap: 7px; }
+.wine-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; transition: border-color .15s; }
+.wine-card:hover { border-color: var(--border-h); }
+
+.rank-col { width: 24px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding-top: 2px; gap: 4px; }
+.rank-num { font-size: 12px; color: var(--hint); font-weight: 600; }
+.wine-icon { font-size: 20px; opacity: .55; }
+
+.wine-body { flex: 1; min-width: 0; }
+.wine-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wine-thin { font-weight: 400; color: var(--muted); }
+.wine-producer { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.wine-meta { font-size: 12px; color: var(--hint); margin-top: 2px; }
+.wine-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+.tag { font-size: 11px; padding: 2px 7px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); background: var(--bg); }
+.tag-type { background: var(--accent-l); color: var(--accent-t); border-color: #e8c4cc; }
+.tag-country { background: var(--blue-l); color: var(--blue); border-color: #ccddf0; }
+
+.wine-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; min-width: 100px; }
+.price { font-size: 14px; font-weight: 600; }
+.vivino-box { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.vivino-label { font-size: 10px; color: var(--hint); text-transform: uppercase; letter-spacing: .5px; }
+.vivino-score { font-size: 20px; font-weight: 700; color: var(--accent); line-height: 1; }
+.vivino-stars { display: flex; gap: 1px; font-size: 11px; }
+.star-full { color: var(--accent); }
+.star-half { color: var(--accent); opacity: .5; }
+.star-empty { color: var(--border-h); }
+.vivino-count { font-size: 11px; color: var(--hint); }
+.no-rating { font-size: 11px; color: var(--hint); font-style: italic; }
+
+.wine-links { display: flex; gap: 5px; }
+.lbtn { font-size: 11px; padding: 4px 9px; border-radius: var(--rs); border: 1px solid var(--border); background: var(--bg); color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 3px; white-space: nowrap; transition: all .15s; }
+.lbtn:hover { background: var(--surface); color: var(--text); }
+.lbtn-vivino { background: var(--accent-l); color: var(--accent-t); border-color: #e8c4cc; }
+.lbtn-syst { background: var(--blue-l); color: var(--blue); border-color: #ccddf0; }
+
+.msg { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+.msg .mi { font-size: 42px; margin-bottom: .75rem; }
+.msg h3 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.msg p { font-size: 13px; line-height: 1.6; max-width: 340px; margin: 0 auto; }
+
+@media (max-width: 500px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .wine-right { min-width: 85px; }
+  .vivino-score { font-size: 17px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🍷 Tillfälliga viner <em>i lager</em></h1>
+  <div class="subtitle">Systembolaget · rankade mot Vivino</div>
+
+  <div class="controls">
+    <div class="store-box">
+      <label for="store-id">Butik</label>
+      <input type="text" id="store-id" value="0151" maxlength="6" oninput="updateStoreName()" />
+      <span class="store-badge" id="store-name">Bromma Blocks</span>
+    </div>
+    <div class="ctrl-search">
+      <span class="si">🔍</span>
+      <input type="text" id="search" placeholder="Sök namn, land..." oninput="renderWines()" />
+    </div>
+    <select id="type-f" onchange="renderWines()">
+      <option value="">Alla typer</option>
+      <option value="Rött vin">Rött</option>
+      <option value="Vitt vin">Vitt</option>
+      <option value="Rosé">Rosé</option>
+      <option value="Mousserande">Mousserande</option>
+      <option value="Dessert">Dessert</option>
+    </select>
+    <select id="sort-s" onchange="renderWines()">
+      <option value="vivino">Vivino ↓</option>
+      <option value="price_asc">Pris ↑</option>
+      <option value="price_desc">Pris ↓</option>
+      <option value="name">Namn</option>
+    </select>
+    <button class="fetch-btn" id="fetch-btn" onclick="startFetch()">🔄 Hämta</button>
+  </div>
+
+  <div class="stats" id="stats" style="display:none;">
+    <div class="stat"><div class="sl">Viner</div><div class="sv" id="s-count">–</div></div>
+    <div class="stat"><div class="sl">Med betyg</div><div class="sv" id="s-rated">–</div></div>
+    <div class="stat"><div class="sl">Snitt</div><div class="sv" id="s-avg">–</div></div>
+    <div class="stat"><div class="sl">Länder</div><div class="sv" id="s-countries">–</div></div>
+  </div>
+
+  <div id="content">
+    <div class="msg">
+      <div class="mi">🍾</div>
+      <h3>Redo</h3>
+      <p>Tryck "Hämta" för att se det tillfälliga sortimentet rankerat mot Vivino.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE_NAMES = {'0151':'Bromma Blocks','0147':'Brommaplan','0101':'City Stockholm','0543':'Göteborg Nordstan','0411':'Malmö Triangeln','0201':'Uppsala'};
+let wines = [];
+
+function updateStoreName() {
+  const id = document.getElementById('store-id').value.trim();
+  document.getElementById('store-name').textContent = STORE_NAMES[id] || '';
+}
+
+function setProgress(pct, msg, phases) {
+  const phaseHtml = phases.map(p =>
+    `<div class="phase ${p.state}">${p.state==='done'?'✓':p.state==='active'?'→':'·'} ${p.label}</div>`
+  ).join('');
+  document.getElementById('content').innerHTML = `
+    <div class="progress-card">
+      <h3>Hämtar och rankar...</h3>
+      <p>${msg}</p>
+      <div class="pbar"><div class="pfill" style="width:${pct}%"></div></div>
+      <div class="ptext">${pct}%</div>
+      <div class="phase-list">${phaseHtml}</div>
+    </div>`;
+}
+
+async function claudeSearch(messages) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages
+    })
+  });
+  if (!res.ok) throw new Error(`Claude-fel: ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || data.error);
+  return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+}
+
+function extractJson(text) {
+  let m = text.match(/\[[\s\S]*\]/);
+  if (m) { try { return JSON.parse(m[0]); } catch(e) {} }
+  m = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+  if (m) { try { return JSON.parse(m[1]); } catch(e) {} }
+  return null;
+}
+
+async function startFetch() {
+  const storeId = document.getElementById('store-id').value.trim();
+  const btn = document.getElementById('fetch-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Arbetar...';
+  document.getElementById('stats').style.display = 'none';
+  wines = [];
+
+  const phases = [
+    { label: 'Hämtar Systembolagets sortiment', state: 'active' },
+    { label: 'Söker Vivino-betyg', state: 'pending' },
+    { label: 'Bygger rankinglista', state: 'pending' }
+  ];
+
+  try {
+    // STEP 1: Systembolaget via backend proxy
+    setProgress(10, 'Hämtar tillfälliga sortimentet...', phases);
+
+    const sysRes = await fetch(`/api/systembolaget?storeId=${storeId}`);
+    if (!sysRes.ok) throw new Error(`Systembolaget-fel: ${sysRes.status}`);
+    const sysData = await sysRes.json();
+    if (sysData.error) throw new Error(sysData.error);
+
+    let fetched = sysData.products || [];
+    if (fetched.length === 0) throw new Error('Inga viner hittades för den butiken.');
+
+    // Prefer tillfälligt, fall back to all
+    const temp = fetched.filter(w => (w.assortmentText||'').toLowerCase().includes('tillfäll'));
+    if (temp.length > 0) fetched = temp;
+
+    phases[0].state = 'done'; phases[1].state = 'active';
+    setProgress(30, `${fetched.length} viner hittade — söker Vivino...`, phases);
+
+    // STEP 2: Vivino ratings via Claude web search in batches
+    const BATCH = 5;
+    const ratedWines = fetched.map(w => ({ ...w, vivinoRating: null, vivinoCount: null, vivinoUrl: null }));
+
+    for (let i = 0; i < fetched.length; i += BATCH) {
+      const batch = fetched.slice(i, i + BATCH);
+      const pct = Math.round(30 + ((i / fetched.length) * 60));
+      setProgress(pct, `Vivino-betyg ${Math.min(i+BATCH, fetched.length)} av ${fetched.length}...`, phases);
+
+      const wineList = batch.map((w, idx) =>
+        `${idx+1}. "${[w.productNameBold, w.productNameThin, w.vintage].filter(Boolean).join(' ')}" – ${w.producerName||''}, ${w.country||''}`
+      ).join('\n');
+
+      try {
+        const result = await claudeSearch([{
+          role: 'user',
+          content: `Search Vivino for the community rating of each wine below. For each, find the numeric rating (e.g. 3.8) and number of ratings.
+
+${wineList}
+
+Return ONLY a JSON array with exactly ${batch.length} objects in order:
+[{"rating": 3.8, "count": 12453, "url": "https://www.vivino.com/wines/..."}, ...]
+
+Use null for any field not found. No markdown, no explanation.`
+        }]);
+
+        const ratings = extractJson(result);
+        if (Array.isArray(ratings)) {
+          batch.forEach((w, idx) => {
+            const r = ratings[idx] || {};
+            const wi = ratedWines.findIndex(rw => rw.productId === w.productId);
+            if (wi >= 0 && r.rating) {
+              ratedWines[wi].vivinoRating = parseFloat(r.rating) || null;
+              ratedWines[wi].vivinoCount = r.count || null;
+              ratedWines[wi].vivinoUrl = r.url || null;
+            }
+          });
+        }
+      } catch(e) { console.warn('Batch failed:', e); }
+    }
+
+    phases[1].state = 'done'; phases[2].state = 'active';
+    setProgress(95, 'Bygger lista...', phases);
+
+    wines = ratedWines;
+    updateStats();
+    renderWines();
+    document.getElementById('stats').style.display = 'grid';
+
+  } catch(err) {
+    document.getElementById('content').innerHTML = `
+      <div class="msg"><div class="mi">⚠️</div><h3>Något gick fel</h3><p>${err.message}</p></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 Hämta';
+  }
+}
+
+function getType(w) {
+  const c = (w.categoryLevel2||'').toLowerCase();
+  if (c.includes('rött')) return 'Rött vin';
+  if (c.includes('vitt')||c.includes('vit')) return 'Vitt vin';
+  if (c.includes('rosé')||c.includes('rose')) return 'Rosé';
+  if (c.includes('mousserande')||c.includes('champagne')||c.includes('cava')||c.includes('prosecco')) return 'Mousserande';
+  if (c.includes('dessert')||c.includes('port')||c.includes('sött')) return 'Dessert';
+  return w.categoryLevel2 || 'Vin';
+}
+
+function starsHtml(r) {
+  if (!r) return '';
+  let s = '';
+  for (let i = 1; i <= 5; i++) {
+    if (r >= i) s += '<span class="star-full">★</span>';
+    else if (r >= i - 0.65) s += '<span class="star-half">★</span>';
+    else s += '<span class="star-empty">★</span>';
+  }
+  return s;
+}
+
+function fmtCount(n) {
+  if (!n) return '';
+  if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (n >= 1000) return Math.round(n/1000)+'k';
+  return n.toString();
+}
+
+function updateStats() {
+  const rated = wines.filter(w => w.vivinoRating);
+  const avg = rated.length ? (rated.reduce((a,b) => a+b.vivinoRating, 0)/rated.length).toFixed(2) : null;
+  document.getElementById('s-count').textContent = wines.length;
+  document.getElementById('s-rated').textContent = rated.length;
+  document.getElementById('s-avg').textContent = avg || '–';
+  document.getElementById('s-countries').textContent = new Set(wines.map(w=>w.country).filter(Boolean)).size;
+}
+
+function renderWines() {
+  if (!wines.length) return;
+  const q = (document.getElementById('search').value||'').toLowerCase();
+  const typeF = document.getElementById('type-f').value;
+  const sort = document.getElementById('sort-s').value;
+
+  let list = wines.filter(w => {
+    const hay = `${w.productNameBold||''} ${w.productNameThin||''} ${w.producerName||''} ${w.country||''}`.toLowerCase();
+    return (!q||hay.includes(q)) && (!typeF||getType(w)===typeF);
+  });
+
+  if (sort==='vivino') list.sort((a,b) => (b.vivinoRating||0)-(a.vivinoRating||0));
+  else if (sort==='price_asc') list.sort((a,b) => parseFloat(a.price||0)-parseFloat(b.price||0));
+  else if (sort==='price_desc') list.sort((a,b) => parseFloat(b.price||0)-parseFloat(a.price||0));
+  else list.sort((a,b) => (a.productNameBold||'').localeCompare(b.productNameBold||'','sv'));
+
+  if (!list.length) {
+    document.getElementById('content').innerHTML = '<div class="msg"><div class="mi">🔍</div><h3>Inga träffar</h3><p>Prova ett annat filter.</p></div>';
+    return;
+  }
+
+  const byVivino = sort==='vivino';
+  const header = `<div class="list-header">
+    <span class="lh-count">${list.length} viner${list.length<wines.length?' (filtrerat)':''}</span>
+    ${byVivino?'<span class="lh-note">↓ Vivino-betyg</span>':''}
+  </div>`;
+
+  const cards = list.map((w, idx) => {
+    const type = getType(w);
+    const price = w.price ? parseFloat(w.price).toFixed(0)+' kr' : '';
+    const meta = [w.country, w.categoryLevel2, w.vintage, w.volume?(parseFloat(w.volume)/100).toFixed(0)+' cl':'', w.alcoholPercentage?parseFloat(w.alcoholPercentage).toFixed(1)+'%':''].filter(Boolean).join(' · ');
+    const icon = type.includes('Mouss')?'🥂':type.includes('Rosé')?'🌸':type.includes('Vitt')?'🍾':type.includes('Dessert')?'🍯':'🍷';
+    const vivinoLink = w.vivinoUrl || `https://www.vivino.com/search/wines?q=${encodeURIComponent([w.productNameBold,w.productNameThin,w.vintage].filter(Boolean).join(' '))}`;
+    const systLink = w.productId ? `https://www.systembolaget.se/produkt/vin/${w.productId}/` : '#';
+
+    const vivinoHtml = w.vivinoRating
+      ? `<div class="vivino-box">
+          <div class="vivino-label">Vivino</div>
+          <div class="vivino-score">${w.vivinoRating.toFixed(1)}</div>
+          <div class="vivino-stars">${starsHtml(w.vivinoRating)}</div>
+          ${w.vivinoCount?`<div class="vivino-count">${fmtCount(w.vivinoCount)} betyg</div>`:''}
+        </div>`
+      : `<div class="no-rating">ej på Vivino</div>`;
+
+    return `<div class="wine-card">
+      <div class="rank-col">
+        ${byVivino?`<div class="rank-num">${idx+1}</div>`:''}
+        <div class="wine-icon">${icon}</div>
+      </div>
+      <div class="wine-body">
+        <div class="wine-name">${w.productNameBold||''}${w.productNameThin?` <span class="wine-thin">${w.productNameThin}</span>`:''}</div>
+        ${w.producerName?`<div class="wine-producer">${w.producerName}</div>`:''}
+        <div class="wine-meta">${meta}</div>
+        <div class="wine-tags">
+          ${type?`<span class="tag tag-type">${type}</span>`:''}
+          ${w.country?`<span class="tag tag-country">${w.country}</span>`:''}
+        </div>
+      </div>
+      <div class="wine-right">
+        <div class="price">${price}</div>
+        ${vivinoHtml}
+        <div class="wine-links">
+          <a class="lbtn lbtn-syst" href="${systLink}" target="_blank">🛒</a>
+          <a class="lbtn lbtn-vivino" href="${vivinoLink}" target="_blank">🍷 Vivino</a>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('content').innerHTML = header + `<div class="wine-list">${cards}</div>`;
+}
+</script>
+</body>
+</html>
